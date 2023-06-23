@@ -6,35 +6,39 @@ const { convertLATime } = require("./utils");
 var no_delay = false;
 var target_courses = [6204];
 
-const my_info = {
-  test: {
-    name: "eliert0327",
-    passwd: "PICpic123!@#",
-    url: "https://cityofla.ezlinksgolf.com/",
-    cardID: "9304996",
-    groupID: "20218",
-  },
-  real: {
-    name: "la-134554",
-    passwd: "hrx7xbe!epj.wkz3DBK",
-    url: "https://cityoflapcp.ezlinksgolf.com/",
-    cardID: "9293237",
-    groupID: "20248",
-  },
-  real1: {
-    name: "la-158582",
-    passwd: "lacitygolf",
-    url: "https://cityoflapcp.ezlinksgolf.com/",
-    cardID: "9304026",
-    groupID: "20248",
-  },
-  real2: {
-    name: "la-171182",
-    passwd: "Damnjina1234!",
-    url: "https://cityoflapcp.ezlinksgolf.com/",
-    cardID: "9620941",
-    groupID: "20248",
-  },
+const card_info = {
+  test: [
+    {
+      name: "eliert0327",
+      passwd: "PICpic123!@#",
+      url: "https://cityofla.ezlinksgolf.com/",
+      cardID: "9304996",
+      groupID: "20218",
+    },
+  ],
+  real: [
+    {
+      name: "la-134554",
+      passwd: "hrx7xbe!epj.wkz3DBK",
+      url: "https://cityoflapcp.ezlinksgolf.com/",
+      cardID: "9293237",
+      groupID: "20248",
+    },
+    {
+      name: "la-158582",
+      passwd: "lacitygolf",
+      url: "https://cityoflapcp.ezlinksgolf.com/",
+      cardID: "9304026",
+      groupID: "20248",
+    },
+    {
+      name: "la-171182",
+      passwd: "Damnjina1234!",
+      url: "https://cityoflapcp.ezlinksgolf.com/",
+      cardID: "9620941",
+      groupID: "20248",
+    },
+  ],
 };
 
 const medium_wait_time = 5000;
@@ -45,7 +49,7 @@ const action_delay_time = 100;
 const serch_api_url = "/api/search/search";
 const login_api_url = "/api/login/login";
 
-const booking_info = my_info.test;
+booking_info = {};
 var csrftoken = "";
 var sessionID = "";
 var globalCookie = "";
@@ -425,7 +429,6 @@ function shuffle(array) {
 
 function getReserveDate() {
   const currentDate = new Date();
-  const currentDay = currentDate.getDay();
   const thisWeekend = new Date(currentDate.setDate(currentDate.getDate() + 9));
 
   const year = thisWeekend.getFullYear();
@@ -464,5 +467,16 @@ if (process.argv.length >= 4) {
   no_delay = true;
 }
 
+if (process.argv.length >= 5) {
+  idx = parseInt(process.argv[4]);
+
+  if (idx > card_info.real.length)
+    idx = Math.floor(Math.random() * card_info.real.length);
+  booking_info = card_info.real[idx];
+} else {
+  booking_info = card_info.test[0];
+}
+
 console.log("Target Courses:", target_courses);
+console.log("Profile", booking_info);
 main();
