@@ -8,7 +8,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const token = "6234916071:AAHkshbBG8bj5PKdmkCUzDhvwVKHhD2HLSM";
 
 // Create a bot that uses 'polling' to fetch new updates
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, { polling: false });
 
 var no_delay = false;
 var target_courses = [6204];
