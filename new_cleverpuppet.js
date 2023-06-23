@@ -236,8 +236,8 @@ async function main() {
             }
           } else {
             var timeA = convertLATime(new Date());
-            if (no_delay || (timeA >= "5:59:00" && timeA <= "6:05:00")) {
-              if (timeA <= "5:50:00" || timeA >= "6:10:00") {
+            if (no_delay || (timeA >= "5:57:00" && timeA <= "6:10:00")) {
+              if (timeA <= "5:57:00" || timeA >= "6:10:00") {
                 console.log(timeA);
                 await wait(medium_wait_time * 10);
               }
@@ -272,7 +272,6 @@ async function main() {
       }
     });
 
-    // await dateInput.type(reservedDate);
     console.log(reservedDate);
 
     do {
