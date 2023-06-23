@@ -2,6 +2,13 @@ const { isEmpty } = require("lodash");
 const puppeteer = require("puppeteer");
 const axios = require("axios").default;
 const { convertLATime } = require("./utils");
+const TelegramBot = require("node-telegram-bot-api");
+
+// replace the value below with the Telegram token you receive from @BotFather
+const token = "6234916071:AAHkshbBG8bj5PKdmkCUzDhvwVKHhD2HLSM";
+
+// Create a bot that uses 'polling' to fetch new updates
+const bot = new TelegramBot(token, { polling: true });
 
 var no_delay = false;
 var target_courses = [6204];
@@ -14,6 +21,7 @@ const card_info = {
       url: "https://cityofla.ezlinksgolf.com/",
       cardID: "9304996",
       groupID: "20218",
+      telegram: ["-1001627135402"],
     },
   ],
   real: [
@@ -23,6 +31,7 @@ const card_info = {
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9293237",
       groupID: "20248",
+      telegram: ["-1001627135402"],
     },
     {
       card_id: "la-158582",
@@ -30,6 +39,7 @@ const card_info = {
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9304026",
       groupID: "20248",
+      telegram: ["-1001627135402"],
     },
     {
       card_id: "la-171182",
@@ -37,6 +47,7 @@ const card_info = {
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9620941",
       groupID: "20248",
+      telegram: ["-1001627135402"],
     },
   ],
 };
@@ -139,15 +150,33 @@ async function reqReservation(course) {
                       finish_req,
                       reliable_header
                     )
-                    .then((resp) => {
+                    .then(async (resp) => {
                       if (!isEmpty(resp) && !isEmpty(resp.data)) {
                         const reservation = resp.data;
-                        console.log(
-                          booking_info.card_id,
-                          reservation.Location,
-                          reservation.ScheduledTime,
-                          convertLATime(new Date())
-                        );
+                        msg = "Card ID : " + booking_info.card_id + "\n";
+                        msg += "Location : " + reservation.Location + "\n";
+                        msg +=
+                          "ScheduledTime : " + reservation.ScheduledTime + "\n";
+                        msg += "Booked Time : " + convertLATime(new Date());
+
+                        for (
+                          let index = 0;
+                          index < booking_info.telegram.length;
+                          index++
+                        ) {
+                          try {
+                            await bot
+                              .sendMessage(booking_info.telegram[index], msg)
+                              .catch((error) => {
+                                console.log(error.code); // => 'ETELEGRAM'
+                                console.log(error.response.body); // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
+                              });
+                            // bot.sendMessage(booking_info.telegram[index], msg);
+                          } catch (e) {
+                            console.log(e);
+                          }
+                        }
+                        console.log(msg);
                         process.exit(0);
                       }
                     })
