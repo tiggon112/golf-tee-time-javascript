@@ -9,7 +9,7 @@ var target_courses = [6204];
 const card_info = {
   test: [
     {
-      name: "eliert0327",
+      card_id: "eliert0327",
       passwd: "PICpic123!@#",
       url: "https://cityofla.ezlinksgolf.com/",
       cardID: "9304996",
@@ -18,21 +18,21 @@ const card_info = {
   ],
   real: [
     {
-      name: "la-134554",
+      card_id: "la-134554",
       passwd: "hrx7xbe!epj.wkz3DBK",
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9293237",
       groupID: "20248",
     },
     {
-      name: "la-158582",
+      card_id: "la-158582",
       passwd: "lacitygolf",
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9304026",
       groupID: "20248",
     },
     {
-      name: "la-171182",
+      card_id: "la-171182",
       passwd: "Damnjina1234!",
       url: "https://cityoflapcp.ezlinksgolf.com/",
       cardID: "9620941",
@@ -143,6 +143,7 @@ async function reqReservation(course) {
                       if (!isEmpty(resp) && !isEmpty(resp.data)) {
                         const reservation = resp.data;
                         console.log(
+                          booking_info.card_id,
                           reservation.Location,
                           reservation.ScheduledTime,
                           convertLATime(new Date())
@@ -214,8 +215,8 @@ async function main() {
             p01: target_courses, //
             p02: reservedDate,
             // p02: "06/11/2023",
-            p03: "5:00 AM",
-            p04: "7:00 PM",
+            p03: "8:00 AM",
+            p04: "12:00 PM",
             p05: 1,
             p06: 4,
             p07: false,
@@ -317,7 +318,7 @@ async function main() {
 
     while (1) {
       try {
-        await page.type("input[type=text]", booking_info.name);
+        await page.type("input[type=text]", booking_info.card_id);
         await page.type("input[type=password]", booking_info.passwd);
         break;
       } catch (e) {
