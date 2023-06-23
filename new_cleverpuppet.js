@@ -21,6 +21,20 @@ const my_info = {
     cardID: "9293237",
     groupID: "20248",
   },
+  real1: {
+    name: "la-158582",
+    passwd: "lacitygolf",
+    url: "https://cityoflapcp.ezlinksgolf.com/",
+    cardID: "9304026",
+    groupID: "20248",
+  },
+  real2: {
+    name: "la-171182",
+    passwd: "Damnjina1234!",
+    url: "https://cityoflapcp.ezlinksgolf.com/",
+    cardID: "9620941",
+    groupID: "20248",
+  },
 };
 
 const medium_wait_time = 5000;
@@ -31,7 +45,7 @@ const action_delay_time = 100;
 const serch_api_url = "/api/search/search";
 const login_api_url = "/api/login/login";
 
-const booking_info = my_info.real;
+const booking_info = my_info.test;
 var csrftoken = "";
 var sessionID = "";
 var globalCookie = "";
@@ -129,7 +143,7 @@ async function reqReservation(course) {
                           reservation.ScheduledTime,
                           convertLATime(new Date())
                         );
-                        process.exit(0)
+                        process.exit(0);
                       }
                     })
                     .catch((e) => {
@@ -172,7 +186,7 @@ async function main() {
     //	  await wait(min_wait_time * 60);
     const reservedDate = getReserveDate();
 
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     const block_resource_type_list = ["image", "stylesheet", "font"];
     await page.setViewport({ width: 1200, height: 720 });
@@ -196,8 +210,8 @@ async function main() {
             p01: target_courses, //
             p02: reservedDate,
             // p02: "06/11/2023",
-            p03: "8:00 AM",
-            p04: "12:00 PM",
+            p03: "5:00 AM",
+            p04: "7:00 PM",
             p05: 1,
             p06: 4,
             p07: false,
@@ -224,12 +238,16 @@ async function main() {
 
           if (!isEmpty(courses) && !isEmpty(courses.r06)) {
             console.log("Courses:", courses.r06.length);
-            var array = shuffle(courses.r06).filter(item => item.r16.includes('Rancho'));
+            var array = shuffle(courses.r06).filter((item) =>
+              item.r16.includes("Rancho")
+            );
             for (let index = 0; index < array.length; index++) {
               var course = array[index];
               await reqReservation(course);
             }
-            array = shuffle(courses.r06).filter(item => !item.r16.includes('Rancho'));
+            array = shuffle(courses.r06).filter(
+              (item) => !item.r16.includes("Rancho")
+            );
             for (let index = 0; index < array.length; index++) {
               var course = array[index];
               await reqReservation(course);
@@ -328,7 +346,7 @@ async function main() {
       var timeA = convertLATime(new Date());
 
       console.log(timeA);
-      if (timeA >= "5:59:00" && timeA <= "6:05:00") {
+      if (timeA >= "5:57:30" && timeA <= "6:05:00") {
         console.log("Go Go!");
         break;
       } else {
@@ -355,7 +373,7 @@ async function main() {
     try {
       await browser.close();
       await wait(retry_time);
-    } catch { }
+    } catch {}
     main();
   }
 }
@@ -408,9 +426,7 @@ function shuffle(array) {
 function getReserveDate() {
   const currentDate = new Date();
   const currentDay = currentDate.getDay();
-  const thisWeekend = new Date(
-    currentDate.setDate(currentDate.getDate() + 9)
-  );
+  const thisWeekend = new Date(currentDate.setDate(currentDate.getDate() + 9));
 
   const year = thisWeekend.getFullYear();
   const month = (thisWeekend.getMonth() + 1).toString().padStart(2, "0");
