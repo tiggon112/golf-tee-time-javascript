@@ -3,54 +3,16 @@ const puppeteer = require("puppeteer");
 const axios = require("axios").default;
 const { convertLATime } = require("./utils");
 const TelegramBot = require("node-telegram-bot-api");
+require("dotenv").config();
 
 // replace the value below with the Telegram token you receive from @BotFather
-const token = "6234916071:AAHkshbBG8bj5PKdmkCUzDhvwVKHhD2HLSM";
+const token = process.env.TELEGRAM_BOT_TOKEN;
 
 // Create a bot that uses 'polling' to fetch new updates
 const bot = new TelegramBot(token, { polling: false });
 
 var no_delay = false;
 var target_courses = [6204];
-
-const card_info = {
-  test: [
-    {
-      card_id: "eliert0327",
-      passwd: "PICpic123!@#",
-      url: "https://cityofla.ezlinksgolf.com/",
-      cardID: "9304996",
-      groupID: "20218",
-      telegram: ["-1001627135402"],
-    },
-  ],
-  real: [
-    {
-      card_id: "la-134554",
-      passwd: "hrx7xbe!epj.wkz3DBK",
-      url: "https://cityoflapcp.ezlinksgolf.com/",
-      cardID: "9293237",
-      groupID: "20248",
-      telegram: ["-1001627135402"],
-    },
-    {
-      card_id: "la-158582",
-      passwd: "lacitygolf",
-      url: "https://cityoflapcp.ezlinksgolf.com/",
-      cardID: "9304026",
-      groupID: "20248",
-      telegram: ["-1001627135402"],
-    },
-    {
-      card_id: "la-171182",
-      passwd: "Damnjina1234!",
-      url: "https://cityoflapcp.ezlinksgolf.com/",
-      cardID: "9620941",
-      groupID: "20248",
-      telegram: ["-1001627135402"],
-    },
-  ],
-};
 
 const medium_wait_time = 5000;
 const retry_time = 1000;
@@ -59,6 +21,20 @@ const action_delay_time = 100;
 // url
 const serch_api_url = "/api/search/search";
 const login_api_url = "/api/login/login";
+
+// 6204 for Rancho, 5997 for Willson, 5998 for Hard
+const default_courses =
+  "5997, 5998, 5995, 23128, 5996, 17679, 6171, 6204, 23129, 6205, 6226,6264, 23131, 6263, 23130, 6380, 23132";
+const default_user_id = "eliert0327";
+const default_user_pwd = "PICpic123!@#";
+const default_user_card_id = "9304996";
+const default_user_group_id = "20218";
+const default_site_url = "https://cityofla.ezlinksgolf.com/";
+const default_telgram_channel_ids = "-1001627135402";
+const default_booking_start_time = process.env.BOOKING_START_TIME || "5:00 AM";
+const default_booking_end_time = process.env.BOOKING_END_TIME || "7:00 PM";
+const default_booking_target_days = process.env.BOOKING_TARGET_DAY || "9";
+const default_reserve_date = getReserveDate();
 
 booking_info = {};
 var csrftoken = "";
@@ -89,7 +65,7 @@ async function reqReservation(course) {
   try {
     await axios
       .post(
-        `${booking_info.url}/api/search/reservation`,
+        `${booking_info.site_url}/api/search/reservation`,
         reservation_info,
         reliable_header
       )
@@ -108,14 +84,14 @@ async function reqReservation(course) {
 
         await axios
           .post(
-            `${booking_info.url}/api/cart/add`,
+            `${booking_info.site_url}/api/cart/add`,
             add_cart_req,
             reliable_header
           )
           .then(async (resp) => {
             if (!isEmpty(resp.data) && resp.data.IsSuccessful == true) {
               const link_req = {
-                CardOnFileID: booking_info.cardID,
+                CardOnFileID: booking_info.user_card_id,
                 SessionID: sessionID,
                 SponsorID: course.r06,
                 ContactID: contactID,
@@ -125,7 +101,7 @@ async function reqReservation(course) {
 
               await axios
                 .post(
-                  `${booking_info.url}/api/card/link`,
+                  `${booking_info.site_url}/api/card/link`,
                   link_req,
                   reliable_header
                 )
@@ -141,19 +117,19 @@ async function reqReservation(course) {
                     SessionID: sessionID,
                     ContactID: contactID,
                     MasterSponsorID: course.r06,
-                    GroupID: booking_info.groupID,
+                    GroupID: booking_info.user_group_id,
                   };
 
                   await axios
                     .post(
-                      `${booking_info.url}/api/cart/finish`,
+                      `${booking_info.site_url}/api/cart/finish`,
                       finish_req,
                       reliable_header
                     )
                     .then(async (resp) => {
                       if (!isEmpty(resp) && !isEmpty(resp.data)) {
                         const reservation = resp.data;
-                        msg = "Card ID : " + booking_info.card_id + "\n";
+                        msg = "Card ID : " + booking_info.user_id + "\n";
                         msg += "Location : " + reservation.Location + "\n";
                         msg +=
                           "ScheduledTime : " + reservation.ScheduledTime + "\n";
@@ -161,17 +137,19 @@ async function reqReservation(course) {
 
                         for (
                           let index = 0;
-                          index < booking_info.telegram.length;
+                          index < booking_info.telgram_channel_ids.length;
                           index++
                         ) {
                           try {
                             await bot
-                              .sendMessage(booking_info.telegram[index], msg)
+                              .sendMessage(
+                                booking_info.telgram_channel_ids[index],
+                                msg
+                              )
                               .catch((error) => {
                                 console.log(error.code); // => 'ETELEGRAM'
                                 console.log(error.response.body); // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
                               });
-                            // bot.sendMessage(booking_info.telegram[index], msg);
                           } catch (e) {
                             console.log(e);
                           }
@@ -217,9 +195,6 @@ async function reqReservation(course) {
 
 async function main() {
   try {
-    //	  await wait(min_wait_time * 60);
-    const reservedDate = getReserveDate();
-
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     const block_resource_type_list = ["image", "stylesheet", "font"];
@@ -242,10 +217,10 @@ async function main() {
           globalCookie = interceptedRequest.headers();
           var payload = {
             p01: target_courses, //
-            p02: reservedDate,
+            p02: default_reserve_date,
             // p02: "06/11/2023",
-            p03: "8:00 AM",
-            p04: "12:00 PM",
+            p03: default_booking_start_time,
+            p04: default_booking_end_time,
             p05: 1,
             p06: 4,
             p07: false,
@@ -324,8 +299,6 @@ async function main() {
       }
     });
 
-    console.log(reservedDate);
-
     do {
       var timeA = convertLATime(new Date());
 
@@ -340,15 +313,15 @@ async function main() {
       }
     } while (1);
 
-    await page.goto(`${booking_info.url}/index.html#/login`, {
+    await page.goto(`${booking_info.site_url}/index.html#/login`, {
       waitUntil: "networkidle0",
       timeout: 0,
     }); // wait until page load
 
     while (1) {
       try {
-        await page.type("input[type=text]", booking_info.card_id);
-        await page.type("input[type=password]", booking_info.passwd);
+        await page.type("input[type=text]", booking_info.user_id);
+        await page.type("input[type=password]", booking_info.user_pwd);
         break;
       } catch (e) {
         await wait(action_delay_time);
@@ -459,7 +432,11 @@ function shuffle(array) {
 
 function getReserveDate() {
   const currentDate = new Date();
-  const thisWeekend = new Date(currentDate.setDate(currentDate.getDate() + 9));
+  const thisWeekend = new Date(
+    currentDate.setDate(
+      currentDate.getDate() + parseInt(default_booking_target_days)
+    )
+  );
 
   const year = thisWeekend.getFullYear();
   const month = (thisWeekend.getMonth() + 1).toString().padStart(2, "0");
@@ -468,45 +445,24 @@ function getReserveDate() {
   return `${month}/${day}/${year}`;
 }
 
-if (process.argv.length >= 3) {
-  switch (parseInt(process.argv[2])) {
-    case 1: // Rancho
-      target_courses = [6204];
-      break;
-    case 2: // Willson
-      target_courses = [5997];
-      break;
-    case 3: // Hard
-      target_courses = [5998];
-      break;
-    case 0: // Recommended 3 places
-      target_courses = [5997, 5998, 6204];
-      break;
-    default: // All
-      target_courses = [
-        5997, 5998, 5995, 23128, 5996, 17679, 6171, 6204, 23129, 6205, 6226,
-        6264, 23131, 6263, 23130, 6380, 23132,
-      ];
+target_courses = (process.env.BOOKING_COURSES || default_courses).split(",");
+no_delay = process.env.BOOKING_NO_DELAY ? true : false;
+booking_info.user_id = process.env.BOOKING_USER_ID || default_user_id;
+booking_info.user_pwd = process.env.BOOKING_USER_PWD || default_user_pwd;
+booking_info.user_card_id =
+  process.env.BOOKING_USER_CARD_ID || default_user_card_id;
+booking_info.user_group_id =
+  process.env.BOOKING_USER_GROUP_ID || default_user_group_id;
+booking_info.site_url = process.env.BOOKING_SITE_URL || default_site_url;
+booking_info.telgram_channel_ids = (
+  process.env.TELEGRAM_CHANNEL_IDS || default_telgram_channel_ids
+).split(",");
 
-      break;
-  }
-}
+console.log(target_courses);
+console.log(no_delay);
+console.log(booking_info);
+console.log(default_booking_start_time);
+console.log(default_booking_end_time);
+console.log(default_reserve_date);
 
-if (process.argv.length >= 4) {
-  console.log("No Delay");
-  no_delay = true;
-}
-
-if (process.argv.length >= 5) {
-  idx = parseInt(process.argv[4]);
-
-  if (idx > card_info.real.length)
-    idx = Math.floor(Math.random() * card_info.real.length);
-  booking_info = card_info.real[idx];
-} else {
-  booking_info = card_info.test[0];
-}
-
-console.log("Target Courses:", target_courses);
-console.log("Profile", booking_info);
 main();
