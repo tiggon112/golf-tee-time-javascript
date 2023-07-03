@@ -35,6 +35,7 @@ const default_booking_start_time = process.env.BOOKING_START_TIME || "5:00 AM";
 const default_booking_end_time = process.env.BOOKING_END_TIME || "7:00 PM";
 const default_booking_target_days = process.env.BOOKING_TARGET_DAY || "9";
 const default_reserve_date = getReserveDate();
+const default_booking_holes = process.env.BOOKING_HOLES || "18";
 
 booking_info = {};
 var csrftoken = "";
@@ -221,7 +222,7 @@ async function main() {
             // p02: "06/11/2023",
             p03: default_booking_start_time,
             p04: default_booking_end_time,
-            p05: 1,
+            p05: default_booking_holes == "18" ? 1 : 2,
             p06: 4,
             p07: false,
           };
@@ -268,7 +269,7 @@ async function main() {
                 console.log(timeA);
                 await wait(medium_wait_time * 10);
               }
-              await page.evaluate(() => {
+              await page.evaluate((holes) => {
                 const tds = Array.from(
                   document.querySelectorAll("ul.dropdown-menu li a")
                 );
@@ -276,11 +277,11 @@ async function main() {
                 tds.map((td) => {
                   var txt = td.innerHTML;
 
-                  if (txt == "18") {
+                  if (txt == holes) {
                     td.click();
                   }
                 });
-              });
+              }, default_booking_holes);
             }
 
             return;
