@@ -36,6 +36,7 @@ const default_booking_end_time = process.env.BOOKING_END_TIME || "7:00 PM";
 const default_booking_target_days = process.env.BOOKING_TARGET_DAY || "9";
 const default_reserve_date = getReserveDate();
 const default_booking_holes = process.env.BOOKING_HOLES || "18";
+const default_booking_mode = process.env.BOOKING_MODE || "stealth";
 
 booking_info = {};
 var csrftoken = "";
@@ -91,6 +92,17 @@ async function reqReservation(course) {
           )
           .then(async (resp) => {
             if (!isEmpty(resp.data) && resp.data.IsSuccessful == true) {
+              if (default_booking_mode == "stealth") {
+                // stealth mode
+                if (
+                  !isEmpty(resp.data.TeeTimeConflict) &&
+                  resp.data.TeeTimeConflict == true
+                ) {
+                  console.log("Already booked");
+                  process.exit(0);
+                }
+              }
+
               const link_req = {
                 CardOnFileID: booking_info.user_card_id,
                 SessionID: sessionID,
@@ -465,5 +477,6 @@ console.log(booking_info);
 console.log(default_booking_start_time);
 console.log(default_booking_end_time);
 console.log(default_reserve_date);
+console.log(default_booking_mode);
 
 main();
