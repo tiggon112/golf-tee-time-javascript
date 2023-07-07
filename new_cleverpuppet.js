@@ -24,7 +24,7 @@ const login_api_url = "/api/login/login";
 
 // 6204 for Rancho, 5997 for Willson, 5998 for Hard
 const default_courses =
-  "5997, 5998, 5995, 23128, 5996, 17679, 6171, 6204, 23129, 6205, 6226,6264, 23131, 6263, 23130, 6380, 23132";
+  "5997,5998,5995,23128,5996,17679,6171,6204,23129,6205,6226,6264,23131,6263,23130,6380,23132";
 const default_user_id = "eliert0327";
 const default_user_pwd = "PICpic123!@#";
 const default_user_card_id = "9304996";
