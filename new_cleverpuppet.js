@@ -94,6 +94,7 @@ async function reqReservation(course) {
             if (!isEmpty(resp.data) && resp.data.IsSuccessful == true) {
               if (default_booking_mode == "stealth") {
                 // stealth mode
+                console.log("Tee Time", resp.data.TeeTimeConflict);
                 if (
                   !isEmpty(resp.data.TeeTimeConflict) &&
                   resp.data.TeeTimeConflict == true
