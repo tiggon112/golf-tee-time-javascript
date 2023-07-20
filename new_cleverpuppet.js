@@ -1,5 +1,11 @@
 const { isEmpty } = require("lodash");
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-extra");
+
+// add stealth plugin and use defaults (all evasion techniques)
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+puppeteer.use(StealthPlugin());
+const { executablePath } = require("puppeteer");
+
 const axios = require("axios").default;
 const { convertLATime } = require("./utils");
 const TelegramBot = require("node-telegram-bot-api");
@@ -205,7 +211,10 @@ async function reqReservation(course) {
 
 async function main() {
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({
+      headless: "new",
+      executablePath: executablePath(),
+    });
     const page = await browser.newPage();
     const block_resource_type_list = ["image", "stylesheet", "font"];
     await page.setViewport({ width: 1200, height: 720 });
@@ -214,7 +223,7 @@ async function main() {
     page.on("request", async (interceptedRequest) => {
       try {
         const headers = interceptedRequest.headers();
-        headers["user-agent"] = "PostmanRuntime/7.32.2";
+        // headers["user-agent"] = "PostmanRuntime/7.32.2";
         // decread load
         if (
           block_resource_type_list.includes(interceptedRequest.resourceType())
@@ -328,6 +337,25 @@ async function main() {
       timeout: 0,
     }); // wait until page load
 
+    await page.waitForTimeout(5000);
+    while (1) {
+      try {
+        const elementHandle = await page.waitForSelector("iframe");
+        console.log("1");
+        const frame = await elementHandle.contentFrame();
+        console.log("2");
+        await page.waitForTimeout(2000);
+        const checkbox = await frame.waitForSelector("input[type=checkbox]");
+        console.log("3");
+        await page.waitForTimeout(2000);
+        checkbox.click();
+        await page.waitForTimeout(5000);
+        break;
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
     while (1) {
       try {
         await page.type("input[type=text]", booking_info.user_id);
@@ -335,13 +363,16 @@ async function main() {
         break;
       } catch (e) {
         await wait(action_delay_time);
-
-        await page.evaluate(
-          () => (document.querySelector("input[type=text]").value = "")
-        );
-        await page.evaluate(
-          () => (document.querySelector("input[type=password]").value = "")
-        );
+        try {
+          await page.evaluate(
+            () => (document.querySelector("input[type=text]").value = "")
+          );
+          await page.evaluate(
+            () => (document.querySelector("input[type=password]").value = "")
+          );
+        } catch(err) {
+          await wait(action_delay_time);
+        }
       }
     }
 
