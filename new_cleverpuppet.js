@@ -340,15 +340,15 @@ async function main() {
     await page.waitForTimeout(5000);
     while (1) {
       try {
-        const elementHandle = await page.waitForSelector("iframe");
-        console.log("1");
-        const frame = await elementHandle.contentFrame();
-        console.log("2");
+        frame = await page
+          .frames()
+          .find((f) => f.url().includes("challenges.cloudflare.com"));
+
+        const element = await frame.$("input[type=checkbox]");
+
         await page.waitForTimeout(2000);
-        const checkbox = await frame.waitForSelector("input[type=checkbox]");
-        console.log("3");
-        await page.waitForTimeout(2000);
-        checkbox.click();
+        //Click the element
+        await element.click();
         await page.waitForTimeout(5000);
         break;
       } catch (e) {
@@ -370,7 +370,7 @@ async function main() {
           await page.evaluate(
             () => (document.querySelector("input[type=password]").value = "")
           );
-        } catch(err) {
+        } catch (err) {
           await wait(action_delay_time);
         }
       }
