@@ -23,30 +23,67 @@ const booking_info = {
 };
 
 const url = "https://api.zenrows.com/v1/";
-const apikey = "143840c50c633c2bc18287a31900eaecbe788a3a";
+const apikey = "f789a4fc5cc9425714d84c30ed338ea80e851e6a";
 const cookieIDs = ["AuthorizationCode", "ContactID"];
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: false });
 
-const startBooking = async () => {
-  try {
-    const { data, headers } = await axios({
-      url,
-      method: "POST",
-      data: "Login=eliert0327&MasterSponsorID=13358&Password=PICpic123!@#&SessionID=",
-      params: {
-        url: "https://cityofla.ezlinksgolf.com/api/login/login",
-        apikey,
-        js_render: "true",
-        antibot: "true",
-        premium_proxy: "true",
-        original_status: "true",
-        device: "desktop",
-      },
-    });
-    console.log("login success", data);
+const startBot = async () => {
+  var timeA = convertLATime(new Date());
+  if (timeA >= "5:57:30" && timeA <= "6:00:00") {
+    login();
+  } else {
+    startBot();
+  }
+};
 
+const login = () => {
+  axios({
+    url,
+    method: "POST",
+    data: "Login=eliert0327&MasterSponsorID=13358&Password=PICpic123!@#&SessionID=",
+    params: {
+      url: "https://cityofla.ezlinksgolf.com/api/login/login",
+      apikey,
+      js_render: "true",
+      antibot: "true",
+      premium_proxy: "true",
+      original_status: "true",
+      device: "desktop",
+    },
+  })
+    .then(async ({ data, headers }) => {
+      do {
+        var timeA = convertLATime(new Date());
+
+        console.log(timeA);
+        if (timeA >= "5:59:59" && timeA <= "6:05:00") {
+          console.log("Go Go!");
+          break;
+        } else {
+          await wait(100);
+        }
+      } while (1);
+      let i = 0;
+      while (1) {
+        i++;
+        console.log("count", i);
+        await startBooking({ data, headers });
+      }
+    })
+    .catch((err) => {
+      if (err.response.data.code === "REQS003") {
+        console.log("Token is expired!");
+        process.exit(0);
+      }
+      console.log("Retrying login");
+      login();
+    });
+};
+
+const startBooking = async ({ data, headers }) => {
+  try {
     const SessionID = data.SessionID;
     const CsrfToken = data.CsrfToken;
     const ContactID = data.ContactID;
@@ -54,13 +91,14 @@ const startBooking = async () => {
       (total, cur) => `${total}; ${cur}=${data[cur]}`,
       headers["zr-cookies"]
     );
-    console.log("Successfully set Sookie", Cookie);
+    console.log("Successfully set Sookie");
 
     const { data: searchData } = await axios({
       url,
       method: "POST",
       headers: { Cookie },
-      data: "p01[0]=5997&p01[1]=5998&p01[2]=5995&p01[3]=23128&p01[4]=5996&p01[5]=17679&p01[6]=6171&p01[7]=6204&p01[8]=23129&p01[9]=6205&p01[10]=6226&p01[11]=6264&p01[12]=23131&p01[13]=6263&p01[14]=23130&p01[15]=6380&p01[16]=23132&p02=08/11/2023&p03=5:00 AM&p04=7:00 PM&p05=0&p06=4&p07=false",
+      data: "p01[0]=32&p02=08/11/2023&p03=5:00 AM&p04=7:00 PM&p05=0&p06=4&p07=false",
+      // data: "p01[0]=5997&p01[1]=5998&p01[2]=5995&p01[3]=23128&p01[4]=5996&p01[5]=17679&p01[6]=6171&p01[7]=6204&p01[8]=23129&p01[9]=6205&p01[10]=6226&p01[11]=6264&p01[12]=23131&p01[13]=6263&p01[14]=23130&p01[15]=6380&p01[16]=23132&p02=08/11/2023&p03=5:00 AM&p04=7:00 PM&p05=0&p06=4&p07=false",
       params: {
         url: "https://cityofla.ezlinksgolf.com/api/search/search",
         apikey,
@@ -74,7 +112,7 @@ const startBooking = async () => {
     });
     console.log("search success");
 
-    const course = searchData["r06"][8];
+    if (!searchData["r06"].length) return;
 
     const { data: reservationData } = await axios({
       url,
@@ -121,7 +159,7 @@ const startBooking = async () => {
         }
       }
 
-      const { data: cardLinkData } = await axios({
+      await axios({
         url,
         method: "POST",
         headers: { Cookie },
@@ -186,10 +224,13 @@ const startBooking = async () => {
       console.log("Failed");
     }
   } catch (err) {
-    console.log(err);
+    if (err.response.data.code === "REQS003") {
+      console.log("Token is expired!");
+      process.exit(0);
+    } else {
+      startBooking();
+    }
   }
 };
 
-startBooking()
-  .then((res) => console.log(res))
-  .catch((err) => console.log(err));
+login();
