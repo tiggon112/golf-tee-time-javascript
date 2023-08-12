@@ -21,9 +21,7 @@ function shuffle(array) {
 function getReserveDate(days) {
   const currentDate = new Date();
   const thisWeekend = new Date(
-    currentDate.setDate(
-      currentDate.getDate() + parseInt(days)
-    )
+    currentDate.setDate(currentDate.getDate() + parseInt(days))
   );
 
   const year = thisWeekend.getFullYear();
@@ -57,4 +55,10 @@ const convertLATime = (date) => {
   );
 };
 
-module.exports = { convertLATime, shuffle, getReserveDate };
+async function wait(time) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, time);
+  });
+}
+
+module.exports = { convertLATime, shuffle, getReserveDate, wait };
