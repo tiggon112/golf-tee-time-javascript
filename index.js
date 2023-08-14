@@ -182,7 +182,7 @@ const startBooking = async ({ data, headers }) => {
     }
   } catch (err) {
     if ((err?.response?.data?.code ?? "") == "REQS003") {
-      console.log("Token is expiredsdfsdfsdf!");
+      console.log("Token is expired!");
       process.exit(0);
     } else {
       console.log({
@@ -312,7 +312,7 @@ const reqReservation = async (
     }
   } catch (err) {
     if ((err?.response?.data?.code ?? "") == "REQS003") {
-      console.log("Token is expiredsdfsdfsdf!");
+      console.log("Token is expired!");
       process.exit(0);
     } else {
       console.log({
