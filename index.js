@@ -16,6 +16,9 @@ const default_courses =
 const default_booking_start_time = process.env.BOOKING_START_TIME || "5:00 AM";
 const default_booking_end_time = process.env.BOOKING_END_TIME || "7:00 PM";
 const default_booking_target_days = process.env.BOOKING_TARGET_DAY || "9";
+const default_start_login_time = "5:57:30";
+const default_start_booking_time = "5:59:57";
+const default_end_time = "6:10:00";
 const default_reserve_date = getReserveDate();
 
 const target_courses = (process.env.BOOKING_COURSES || default_courses).split(
@@ -40,6 +43,14 @@ const cookieIDs = ["AuthorizationCode", "ContactID"];
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: false });
 
+const start_login_time = process.env.IS_TEST_MODE
+  ? "1:44:00"
+  : default_start_login_time;
+const start_booking_time = process.env.IS_TEST_MODE
+  ? "1:44:30"
+  : default_start_booking_time;
+const end_time = process.env.IS_TEST_MODE ? "1:44:35" : default_end_time;
+
 const startBot = async () => {
   const twirlTimer =
     !no_delay &&
@@ -47,18 +58,21 @@ const startBot = async () => {
       const P = ["\\", "|", "/", "-"];
       let x = 0;
       return setInterval(function () {
-        process.stdout.write("\r" + P[x++] + " Please Wait util 5:57:30");
+        process.stdout.write(
+          "\r" + P[x++] + ` ${convertLATime(new Date())} ${start_login_time}`
+        );
         x &= 3;
-      }, 150);
+      }, 200);
     })();
   while (1) {
     const timeA = convertLATime(new Date());
-    if (no_delay || (timeA >= "5:57:30" && timeA <= "6:00:00")) {
+    if (no_delay || (timeA >= start_login_time && timeA <= end_time)) {
       clearInterval(twirlTimer);
       console.log("\n");
-      await login();
+      const waitTime = await login();
+      await wait(waitTime);
     }
-    if (timeA <= "5:57:30" || timeA >= "6:00:00") {
+    if (timeA <= start_login_time || timeA >= end_time) {
       await wait(2000);
     }
   }
@@ -67,13 +81,13 @@ const startBot = async () => {
 const login = async () => {
   console.log("Please wait! I'm logging in");
   try {
-    console.log(url, booking_info.site_url, apikey);
     const { data, headers } = await axios({
       url,
       method: "POST",
       data: `Login=${booking_info.user_id}&MasterSponsorID=13358&Password=${booking_info.user_pwd}&SessionID=`,
       params: {
         url: `${booking_info.site_url}/api/login/login`,
+        proxy_country: "us",
         apikey,
         js_render: "true",
         antibot: "true",
@@ -84,13 +98,17 @@ const login = async () => {
     });
     console.log("Login succeed");
 
-    const twirlTimer = (function () {
+    const bookingWaitTimer = (function () {
       const P = ["\\", "|", "/", "-"];
       let x = 0;
       return (
-        no_delay &&
+        !no_delay &&
         setInterval(function () {
-          process.stdout.write("\r" + P[x++] + " Please Wait util 5:59:59");
+          process.stdout.write(
+            "\r" +
+              P[x++] +
+              ` ${convertLATime(new Date())} ${start_booking_time}`
+          );
           x &= 3;
         }, 150)
       );
@@ -98,8 +116,8 @@ const login = async () => {
     do {
       const timeA = convertLATime(new Date());
 
-      if (no_delay || (timeA >= "5:59:59" && timeA <= "6:05:00")) {
-        clearInterval(twirlTimer);
+      if (no_delay || (timeA >= start_booking_time && timeA <= end_time)) {
+        clearInterval(bookingWaitTimer);
         console.log("\nHere we go!");
         break;
       } else {
@@ -108,9 +126,16 @@ const login = async () => {
     } while (1);
     let i = 0;
     while (1) {
+      const timeA = convertLATime(new Date());
+      if (!no_delay && timeA > end_time) {
+        console.log("Time over!");
+        process.exit(0);
+      }
+
       i++;
       console.log("search count:", i);
-      await startBooking({ data, headers });
+      const waitTime = await startSearching({ data, headers });
+      await wait(waitTime);
     }
   } catch (err) {
     if ((err?.response?.data?.code ?? "") === "REQS003") {
@@ -123,12 +148,12 @@ const login = async () => {
         data: err.response.data,
       });
       console.log("login failed. Retrying to login");
-      return "retry";
+      return 800;
     }
   }
 };
 
-const startBooking = async ({ data, headers }) => {
+const startSearching = async ({ data, headers }) => {
   try {
     const SessionID = data.SessionID;
     const CsrfToken = data.CsrfToken;
@@ -148,6 +173,7 @@ const startBooking = async ({ data, headers }) => {
       data: body,
       params: {
         url: `${booking_info.site_url}/api/search/search`,
+        proxy_country: "us",
         apikey,
         js_render: "true",
         antibot: "true",
@@ -165,19 +191,9 @@ const startBooking = async ({ data, headers }) => {
     }
     console.log("Search success: " + courses.length + " results detected");
 
-    const ranchoArray = [];
-    const otherArray = [];
-    shuffle(courses).forEach((item) => {
-      if (item.r16.includes("Rancho")) {
-        ranchoArray.push(item);
-      } else {
-        otherArray.push(item);
-      }
-    });
-    for (let course of ranchoArray) {
-      await reqReservation(course, Cookie, SessionID, ContactID, CsrfToken);
-    }
-    for (let course of otherArray) {
+    shuffledCourses = shuffle(courses);
+
+    for (let course of shuffledCourses) {
       await reqReservation(course, Cookie, SessionID, ContactID, CsrfToken);
     }
   } catch (err) {
@@ -190,7 +206,8 @@ const startBooking = async ({ data, headers }) => {
         statusText: err.response.statusText,
         data: err.response.data,
       });
-      return "retry";
+      if (err.response.data.status == 422) return 0;
+      return 500;
     }
   }
 };
@@ -211,6 +228,7 @@ const reqReservation = async (
       data: `p02[0].r01=${course.r06}&p02[0].r02=${course.r10}&p02[0].r03=${course.r13}&p02[0].r04=${course.r12}&p02[0].r05=0&p02[0].r06=${course.r02}&p02[0].r07=${course.r20}&p01=${course.r01}&p03=${SessionID}`,
       params: {
         url: `${booking_info.site_url}/api/search/reservation`,
+        proxy_country: "us",
         apikey,
         js_render: "true",
         antibot: "true",
@@ -230,6 +248,7 @@ const reqReservation = async (
       data: `r01=${course.r01}&r02=${reservationData.r02[0]}&r03=4&r04=false&r05=${ContactID}&r06=false&r07=${SessionID}&r08=${reservationData.r02[0].r06}&r09=${CsrfToken}`,
       params: {
         url: `${booking_info.site_url}/api/cart/add`,
+        proxy_country: "us",
         apikey,
         js_render: "true",
         antibot: "true",
@@ -257,6 +276,7 @@ const reqReservation = async (
         data: `CardOnFileID=${booking_info.user_card_id}&SessionID=${SessionID}&SponsorID=${course.r06}&ContactID=${ContactID}&CourseID=${course.r07}&MasterSponsorID=${course.r06}`,
         params: {
           url: `${booking_info.site_url}/api/card/link`,
+          proxy_country: "us",
           apikey,
           js_render: "true",
           antibot: "true",
@@ -275,6 +295,7 @@ const reqReservation = async (
         data: `ContinueOnPartnerTeeTimeConflict=true&Email1=null&Email2=null&Email3=null&SponsorID=${course.r06}&CourseID=${course.r07}&ReservationTypeID=${course.r03}&SessionID=${SessionID}&ContactID=${ContactID}&MasterSponsorID=${course.r06}&GroupID=${booking_info.user_group_id}`,
         params: {
           url: `${booking_info.site_url}/api/cart/finish`,
+          proxy_country: "us",
           apikey,
           js_render: "true",
           antibot: "true",
