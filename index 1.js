@@ -44,12 +44,12 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: false });
 
 const start_login_time = process.env.IS_TEST_MODE
-  ? "1:44:00"
+  ? "2:23:00"
   : default_start_login_time;
 const start_booking_time = process.env.IS_TEST_MODE
-  ? "1:44:30"
+  ? "2:23:30"
   : default_start_booking_time;
-const end_time = process.env.IS_TEST_MODE ? "1:44:35" : default_end_time;
+const end_time = process.env.IS_TEST_MODE ? "2:23:35" : default_end_time;
 
 const startBot = async () => {
   const twirlTimer =
@@ -121,7 +121,7 @@ const login = async () => {
         console.log("\nHere we go!");
         break;
       } else {
-        await wait(1000);
+        await wait(800);
       }
     } while (1);
     let i = 0;
@@ -191,11 +191,18 @@ const startSearching = async ({ data, headers }) => {
     }
     console.log("Search success: " + courses.length + " results detected");
 
-    shuffledCourses = shuffle(courses);
+    const randomId =
+      courses.length - Math.floor(Math.random() * courses.length) - 1;
 
-    for (let course of shuffledCourses) {
-      await reqReservation(course, Cookie, SessionID, ContactID, CsrfToken);
-    }
+    await reqReservation(
+      courses[randomId],
+      Cookie,
+      SessionID,
+      ContactID,
+      CsrfToken
+    );
+
+    return 0;
   } catch (err) {
     if ((err?.response?.data?.code ?? "") == "REQS003") {
       console.log("Token is expired!");
