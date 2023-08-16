@@ -192,7 +192,7 @@ const startSearching = async ({ data, headers }) => {
     console.log("Search success: " + courses.length + " results detected");
 
     const randomId =
-      courses.length - Math.floor(Math.random() * courses.length) - 1;
+      courses.length - Math.floor((0.75 + Math.random() * 0.1) * 10);
 
     await reqReservation(
       courses[randomId],
@@ -265,9 +265,9 @@ const reqReservation = async (
         custom_headers: "true",
       },
     });
-    console.log("Cart add success");
 
     if (!isEmpty(cartAddData) && cartAddData.IsSuccessful == true) {
+      console.log("Cart add success");
       if (default_booking_mode == "stealth") {
         // stealth mode
         if (cartAddData.TeeTimeConflict == true) {
@@ -337,7 +337,7 @@ const reqReservation = async (
         process.exit(0);
       }
     } else {
-      console.log("Failed");
+      console.log("Cart add failed");
     }
   } catch (err) {
     if ((err?.response?.data?.code ?? "") == "REQS003") {

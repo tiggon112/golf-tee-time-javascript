@@ -258,9 +258,9 @@ const reqReservation = async (
         custom_headers: "true",
       },
     });
-    console.log("Cart add success");
 
     if (!isEmpty(cartAddData) && cartAddData.IsSuccessful == true) {
+      console.log("Cart add success");
       if (default_booking_mode == "stealth") {
         // stealth mode
         if (cartAddData.TeeTimeConflict == true) {
@@ -330,7 +330,7 @@ const reqReservation = async (
         process.exit(0);
       }
     } else {
-      console.log("Failed");
+      console.log("Cart add failed");
     }
   } catch (err) {
     if ((err?.response?.data?.code ?? "") == "REQS003") {
