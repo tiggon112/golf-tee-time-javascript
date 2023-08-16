@@ -1,11 +1,6 @@
-node new_cleverpuppet.js $1 no 0 &
-sleep 5
-node new_cleverpuppet.js $1 no 1 &
-sleep 5
-node new_cleverpuppet.js $1 no 2 &
-sleep 5
-node new_cleverpuppet.js $1 no 0 &
-sleep 5
-node new_cleverpuppet.js $1 no 1 &
-sleep 5
-node new_cleverpuppet.js $1 no 2 &
+pm2 start --name "booking1" "node index.js"
+pm2 start --name "booking2" "node index.js"
+pm2 start --name "booking3" "node index.js"
+pm2 start --name "booking4" "node index.js"
+pm2 start --name "booking5" "node index.js"
+pm2 start --name "booking6" "node index1.js"

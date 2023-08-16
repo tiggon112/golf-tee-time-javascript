@@ -17,7 +17,7 @@ const default_booking_start_time = process.env.BOOKING_START_TIME || "5:00 AM";
 const default_booking_end_time = process.env.BOOKING_END_TIME || "7:00 PM";
 const default_booking_target_days = process.env.BOOKING_TARGET_DAY || "9";
 const default_start_login_time = "5:57:30";
-const default_start_booking_time = "5:59:57";
+const default_start_booking_time = "5:59:55";
 const default_end_time = "6:10:00";
 const default_reserve_date = getReserveDate();
 
