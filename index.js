@@ -4,6 +4,7 @@ const { isEmpty } = require("lodash");
 const { convertLATime, shuffle, wait } = require("./utils");
 const TelegramBot = require("node-telegram-bot-api");
 
+// const regions = ["mx", "jm", "us"];
 const default_user_id = "eliert0327";
 const default_user_pwd = "PICpic123!@#";
 const default_user_card_id = "9304996";
@@ -20,6 +21,9 @@ const default_start_login_time = "5:57:30";
 const default_start_booking_time = "5:59:55";
 const default_end_time = "6:10:00";
 const default_reserve_date = getReserveDate();
+const proxy_country = "us"; // regions[Math.floor(Math.random() * 3)]; // random region
+let random_session_id = Math.floor(Math.random() * 9999) + 1;
+console.log(`You have chosen ${proxy_country} as a proxy region`);
 
 const target_courses = (process.env.BOOKING_COURSES || default_courses).split(
   ","
@@ -87,13 +91,14 @@ const login = async () => {
       data: `Login=${booking_info.user_id}&MasterSponsorID=13358&Password=${booking_info.user_pwd}&SessionID=`,
       params: {
         url: `${booking_info.site_url}/api/login/login`,
-        proxy_country: "us",
+        proxy_country,
         apikey,
         js_render: "true",
         antibot: "true",
         premium_proxy: "true",
         original_status: "true",
         device: "desktop",
+        session_id: random_session_id,
       },
     });
     console.log("Login succeed");
@@ -119,6 +124,7 @@ const login = async () => {
       if (no_delay || (timeA >= start_booking_time && timeA <= end_time)) {
         clearInterval(bookingWaitTimer);
         console.log("\nHere we go!");
+        console.time("Search Time");
         break;
       } else {
         await wait(1000);
@@ -133,8 +139,12 @@ const login = async () => {
       }
 
       i++;
-      console.log("search count:", i);
-      const waitTime = await startSearching({ data, headers });
+      if (!(i % 5)) random_session_id = Math.floor(Math.random() * 9999) + 1;
+      console.timeLog("Search Time", "Search count: ", i);
+      const waitTime = await startSearching(
+        { data, headers },
+        random_session_id
+      );
       await wait(waitTime);
     }
   } catch (err) {
@@ -153,7 +163,7 @@ const login = async () => {
   }
 };
 
-const startSearching = async ({ data, headers }) => {
+const startSearching = async ({ data, headers }, session_id) => {
   try {
     const SessionID = data.SessionID;
     const CsrfToken = data.CsrfToken;
@@ -166,6 +176,7 @@ const startSearching = async ({ data, headers }) => {
     const body = target_courses.reduceRight((total, cur, inx) => {
       return `p01[${inx}]=${cur}&${total}`;
     }, `p02=${default_reserve_date}&p03=${default_booking_start_time}&p04=${default_booking_end_time}&p05=1&p06=4&p07=false`);
+    console.log(session_id);
     const { data: searchData } = await axios({
       url,
       method: "POST",
@@ -173,7 +184,7 @@ const startSearching = async ({ data, headers }) => {
       data: body,
       params: {
         url: `${booking_info.site_url}/api/search/search`,
-        proxy_country: "us",
+        proxy_country,
         apikey,
         js_render: "true",
         antibot: "true",
@@ -181,13 +192,14 @@ const startSearching = async ({ data, headers }) => {
         original_status: "true",
         device: "desktop",
         custom_headers: "true",
+        session_id,
       },
     });
 
     const courses = searchData["r06"];
     if (!courses.length) {
       console.log("No search results!");
-      return;
+      return 0;
     }
     console.log("Search success: " + courses.length + " results detected");
 
@@ -206,7 +218,7 @@ const startSearching = async ({ data, headers }) => {
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
-      if (err.response.data.status == 422) return 0;
+      if (err?.response?.data?.status ?? "" == 422) return 0;
       return 500;
     }
   }
@@ -220,6 +232,7 @@ const reqReservation = async (
   CsrfToken
 ) => {
   try {
+    const session_id = Math.floor(Math.random() * 9999) + 1;
     console.log("Reservation start: ", course.r16);
     const { data: reservationData } = await axios({
       url,
@@ -228,7 +241,7 @@ const reqReservation = async (
       data: `p02[0].r01=${course.r06}&p02[0].r02=${course.r10}&p02[0].r03=${course.r13}&p02[0].r04=${course.r12}&p02[0].r05=0&p02[0].r06=${course.r02}&p02[0].r07=${course.r20}&p01=${course.r01}&p03=${SessionID}`,
       params: {
         url: `${booking_info.site_url}/api/search/reservation`,
-        proxy_country: "us",
+        proxy_country,
         apikey,
         js_render: "true",
         antibot: "true",
@@ -236,6 +249,7 @@ const reqReservation = async (
         original_status: "true",
         device: "desktop",
         custom_headers: "true",
+        session_id,
       },
     });
     console.log("Opening reservation success");
@@ -248,7 +262,7 @@ const reqReservation = async (
       data: `r01=${course.r01}&r02=${reservationData.r02[0]}&r03=4&r04=false&r05=${ContactID}&r06=false&r07=${SessionID}&r08=${reservationData.r02[0].r06}&r09=${CsrfToken}`,
       params: {
         url: `${booking_info.site_url}/api/cart/add`,
-        proxy_country: "us",
+        proxy_country,
         apikey,
         js_render: "true",
         antibot: "true",
@@ -256,6 +270,7 @@ const reqReservation = async (
         original_status: "true",
         device: "desktop",
         custom_headers: "true",
+        session_id,
       },
     });
 
@@ -277,7 +292,7 @@ const reqReservation = async (
         data: `CardOnFileID=${booking_info.user_card_id}&SessionID=${SessionID}&SponsorID=${course.r06}&ContactID=${ContactID}&CourseID=${course.r07}&MasterSponsorID=${course.r06}`,
         params: {
           url: `${booking_info.site_url}/api/card/link`,
-          proxy_country: "us",
+          proxy_country,
           apikey,
           js_render: "true",
           antibot: "true",
@@ -285,6 +300,7 @@ const reqReservation = async (
           original_status: "true",
           device: "desktop",
           custom_headers: "true",
+          session_id,
         },
       });
       console.log("card link data success");
@@ -296,7 +312,7 @@ const reqReservation = async (
         data: `ContinueOnPartnerTeeTimeConflict=true&Email1=null&Email2=null&Email3=null&SponsorID=${course.r06}&CourseID=${course.r07}&ReservationTypeID=${course.r03}&SessionID=${SessionID}&ContactID=${ContactID}&MasterSponsorID=${course.r06}&GroupID=${booking_info.user_group_id}`,
         params: {
           url: `${booking_info.site_url}/api/cart/finish`,
-          proxy_country: "us",
+          proxy_country,
           apikey,
           js_render: "true",
           antibot: "true",
@@ -304,6 +320,7 @@ const reqReservation = async (
           original_status: "true",
           device: "desktop",
           custom_headers: "true",
+          session_id,
         },
       });
       console.log("Cart finish success");
