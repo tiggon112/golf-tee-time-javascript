@@ -213,8 +213,7 @@ const startSearching = async ({ data, headers }, session_id) => {
         Cookie,
         SessionID,
         ContactID,
-        CsrfToken,
-        session_id
+        CsrfToken
       );
     }
   } catch (err) {
