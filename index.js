@@ -157,6 +157,7 @@ const login = async () => {
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       console.log("login failed. Retrying to login");
       return 800;
     }
@@ -226,6 +227,7 @@ const startSearching = async ({ data, headers }, session_id) => {
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       if (err?.response?.data?.status ?? "" == 422) return 0;
       return 500;
     }
@@ -313,7 +315,6 @@ const reqReservation = async (
         },
       });
       console.log("card link data success");
-      return new Error("error");
 
       const { data: cartFinishData } = await axios({
         url,
@@ -369,6 +370,7 @@ const reqReservation = async (
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       return "next reservation";
     }
   }
