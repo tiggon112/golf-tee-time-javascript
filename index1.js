@@ -157,6 +157,7 @@ const login = async () => {
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       console.log("login failed. Retrying to login");
       return 800;
     }
@@ -176,7 +177,6 @@ const startSearching = async ({ data, headers }, session_id) => {
     const body = target_courses.reduceRight((total, cur, inx) => {
       return `p01[${inx}]=${cur}&${total}`;
     }, `p02=${default_reserve_date}&p03=${default_booking_start_time}&p04=${default_booking_end_time}&p05=1&p06=4&p07=false`);
-    console.log(session_id);
     const { data: searchData } = await axios({
       url,
       method: "POST",
@@ -203,9 +203,10 @@ const startSearching = async ({ data, headers }, session_id) => {
     }
     console.log("Search success: " + courses.length + " results detected");
 
-    const shuffledIndex = shuffle(
-      [...Array(courses.length)].map((_val, inx) => inx)
-    );
+    const shuffledIndex = [
+      Math.floor((courses.length / 10) * 7),
+      Math.floor((courses.length / 10) * 3),
+    ];
 
     for (let inx of shuffledIndex) {
       await reqReservation(
@@ -213,7 +214,8 @@ const startSearching = async ({ data, headers }, session_id) => {
         Cookie,
         SessionID,
         ContactID,
-        CsrfToken
+        CsrfToken,
+        session_id
       );
     }
   } catch (err) {
@@ -226,6 +228,7 @@ const startSearching = async ({ data, headers }, session_id) => {
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       if (err?.response?.data?.status ?? "" == 422) return 0;
       return 500;
     }
@@ -237,10 +240,10 @@ const reqReservation = async (
   Cookie,
   SessionID,
   ContactID,
-  CsrfToken
+  CsrfToken,
+  session_id
 ) => {
   try {
-    const session_id = Math.floor(Math.random() * 9999) + 1;
     console.log("Reservation start: ", course.r16);
     const { data: reservationData } = await axios({
       url,
@@ -367,6 +370,7 @@ const reqReservation = async (
         statusText: err?.response?.statusText ?? "",
         data: err?.response?.data ?? "",
       });
+      random_session_id = Math.floor(Math.random() * 9999) + 1;
       return "next reservation";
     }
   }

@@ -244,7 +244,6 @@ const reqReservation = async (
 ) => {
   try {
     console.log("Reservation start: ", course.r16);
-    console.log(session_id);
     const { data: reservationData } = await axios({
       url,
       method: "POST",
