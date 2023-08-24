@@ -140,7 +140,7 @@ const login = async () => {
 
       i++;
       if (!(i % 5)) random_session_id = Math.floor(Math.random() * 9999) + 1;
-      console.timeLog(" ", "Search count: ", i);
+      console.timeLog("Time:", "Search count: ", i);
       const waitTime = await startSearching(
         { data, headers },
         random_session_id
