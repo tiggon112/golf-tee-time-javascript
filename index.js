@@ -140,7 +140,7 @@ const login = async () => {
 
       i++;
       if (!(i % 5)) random_session_id = Math.floor(Math.random() * 9999) + 1;
-      console.timeLog("Search Time", "Search count: ", i);
+      console.timeLog(" ", "Search count: ", i);
       const waitTime = await startSearching(
         { data, headers },
         random_session_id
@@ -201,7 +201,7 @@ const startSearching = async ({ data, headers }, session_id) => {
       console.log("No search results!");
       return 0;
     }
-    console.log("Search success: " + courses.length + " results detected");
+    console.log("Search succeed: ", courses.length, " results detected");
 
     const shuffledIndex = shuffle(
       [...Array(courses.length)].map((_val, inx) => inx)
