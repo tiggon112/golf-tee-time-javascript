@@ -201,7 +201,7 @@ const startSearching = async ({ data, headers }, session_id) => {
       console.log("No search results!");
       return 0;
     }
-    console.log("Search succeed: ", courses.length, " results detected");
+    console.log("Search succeed:", courses.length, "results detected");
 
     const shuffledIndex = shuffle(
       [...Array(courses.length)].map((_val, inx) => inx)
